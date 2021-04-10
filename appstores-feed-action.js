@@ -1,4 +1,4 @@
-// Compile this file using: `ncc build index.js --license licenses.txt`
+// Compile this file using: `ncc build appstores-feed-action.js --license licenses.txt`
 const fs = require('fs');
 const appstoresService = require('./services/appstores.service');
 
@@ -21,7 +21,7 @@ if (appstoreIds.length === 0 && playstoreIds.length === 0) {
 }
 
 // Retrieve Apps Data
-appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(appsData => {
+appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsData => {
     if (appsData.length === 0) {
         core.error('Couldn\'t retrieve any apps for the specified ids');
         core.info("Appstore ids: " + appstoreIds);
