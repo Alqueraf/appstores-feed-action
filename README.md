@@ -41,7 +41,7 @@ This workflow has additional options that you can use to customize it for your u
 |--------|--------|--------|--------|
 | `appstore_ids` | `""` | Comma-separated list of appstore app ids, ex: `123321,321123` | Yes  |
 | `playstore_ids` | `""` | Comma-separated list of playstore app package ids, ex: `org.example1,org.example2` | Yes  |
-| `readme_path` | `./README.md` | Path of the readme file you want to update | No |
+| `svg_path` | `./images/appstores.svg` | Path of the svg file you want to update | No |
 | `gh_token` | Your GitHub token with repo scope | Use this to configure the token of the user that commits the workflow result to GitHub | No |
 | `commit_message` | `Updated with the latest apps data` | Allows you to customize the commit message | No |
 | `committer_username` | `appstores-feed-bot` | Allows you to customize the committer username | No |

@@ -9,7 +9,7 @@ class AppstoresService {
      */
     async getLatestAppsData(playstoreIds, appstoreIds) {
         const playstoreRequests = playstoreIds.map(e => playstoreScrapper.app({appId: e}));
-        const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({id: e}));
+        const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({id: e, ratings: true}));
 
         const playstoreApps = await Promise.all(playstoreRequests);
         const appstoreApps = await Promise.all(appstoreRequests);
@@ -32,7 +32,7 @@ class AppstoresService {
                 "name": appstoreApp["title"],
                 "icon": appstoreApp["icon"],
                 "rating": appstoreApp["score"],
-                "rating_count": appstoreApp["reviews"],
+                "rating_count": appstoreApp["ratings"],
                 "url": appstoreApp["url"],
                 "type": "appstore"
             });
