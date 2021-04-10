@@ -308,7 +308,7 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
         process.exit(1);
     } else {
         try {
-            core.info("Got apps data:" + appsData.join());
+            core.info("Got apps data:" + appsData.map(e => JSON.stringify(e)).join());
             core.info("Reading README file");
             const readmeData = fs.readFileSync(README_FILE_PATH, 'utf8');
             core.info("Building Appstores Feed Markdown");
@@ -344,12 +344,11 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
 const buildAppstoresFeedMarkdown = (appsData) => {
     // Prepare HTML block
     const htmlStartElement = `
-    <div class="grid-container" style="
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        max-width: 750px;
-        grid-gap: 2rem;">
-        `;
+ <div class="grid-container" style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+     max-width: 750px;
+    grid-gap: 2rem;">`;
     const htmlEndElement = `</div>`;
     const appImagePlaceholder = "{{image}}";
     const appNamePlaceholder = "{{name}}";
@@ -358,36 +357,35 @@ const buildAppstoresFeedMarkdown = (appsData) => {
     const appLinkPlaceholder = "{{appLink}}";
     const appLinkImagePlaceholder = "{{appLinkImage}}";
     const htmlRowElement = `
-    <div class="grid-item" style="
-        border-bottom: 1px solid rgba(236,236,236, 1);
-        display: grid;
-        grid-template-columns: auto auto auto;
-        align-items: center;
-        padding-bottom: 10px;">
-        <img class="grid-item-image" src="${appImagePlaceholder}" style="width: 50px; height: 50px;"/>
-        <div class="grid-item-info" style="display: inline; margin-left: 10px;">
-            <span class="grid-item-title" style="font-weight: bold;">${appNamePlaceholder}</span>
-            <br>
-            <span>⭐️ ${appRatingPlaceholder}</span>
-            <br>
-            <span class="grid-item-caption" style="font-size: 12px;">${appMetricsPlaceholder}</span>
-        </div>
-        <a class="grid-item-link" style="margin-left: 10px; height: 25px;" href="${appLinkPlaceholder}"><img src="${appLinkImagePlaceholder}"/></a>
+<div class="grid-item" style="
+    border-bottom: 1px solid rgba(236,236,236, 1);
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    padding-bottom: 10px;">
+    <img class="grid-item-image" src="${appImagePlaceholder}" style="width: 50px; height: 50px;"/>
+    <div class="grid-item-info" style="display: inline; margin-left: 10px;">
+        <span class="grid-item-title" style="font-weight: bold;">${appNamePlaceholder}</span>
+        <br>
+        <span>⭐️ ${appRatingPlaceholder}</span>
+        <br>
+        <span class="grid-item-caption" style="font-size: 12px;">${appMetricsPlaceholder}</span>
     </div>
-    `;
+    <a class="grid-item-link" style="margin-left: 10px; height: 25px;" href="${appLinkPlaceholder}"><img src="${appLinkImagePlaceholder}"/></a>
+</div>`;
     let newContent = appsData.map((element, index) => {
         // Set Content
         let rowElement = htmlRowElement
             .replace(appNamePlaceholder, element["name"].trim().replace(/(\r\n|\n|\r)/gm, " "))
             .replace(appImagePlaceholder, element["icon"])
             .replace(appRatingPlaceholder, element["rating"])
-            .replace(appMetricsPlaceholder, element["type"] === "appstore" ? element["rating_count"] + "reviews" : element["installs"] + "installs")
+            .replace(appMetricsPlaceholder, element["type"] === "appstore" ? element["rating_count"] + " reviews" : element["installs"] + " installs")
             .replace(appLinkPlaceholder, element["url"])
             .replace(appLinkImagePlaceholder, element["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
         return rowElement;
 
     }).join('');
-    return htmlStartElement + newContent + htmlEndElement;
+    return (htmlStartElement + newContent + htmlEndElement).trim();
 };
 
 
@@ -103760,16 +103758,18 @@ class AppstoresService {
         
         let appsData = [];
         playstoreApps.forEach((playstoreApp) => {
+            console.log("Adding playstore app: "+JSON.stringify(playstoreApp));
             appsData.push({
                 "name": playstoreApp["title"],
                 "icon": playstoreApp["icon"],
-                "rating": playstoreApp["scoreText"] != null ? parseInt(playstoreApp["scoreText"]) : null,
+                "rating": playstoreApp["scoreText"] != null ? parseFloat(playstoreApp["scoreText"]) : null,
                 "installs": playstoreApp["installs"],
                 "url": playstoreApp["url"],
                 "type": "playstore"
             });
         });
         appstoreApps.forEach((appstoreApp) => {
+            console.log("Adding appstore app: "+JSON.stringify(appstoreApp));
             appsData.push({
                 "name": appstoreApp["title"],
                 "icon": appstoreApp["icon"],

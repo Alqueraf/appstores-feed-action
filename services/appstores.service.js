@@ -16,16 +16,18 @@ class AppstoresService {
         
         let appsData = [];
         playstoreApps.forEach((playstoreApp) => {
+            console.log("Adding playstore app: "+JSON.stringify(playstoreApp));
             appsData.push({
                 "name": playstoreApp["title"],
                 "icon": playstoreApp["icon"],
-                "rating": playstoreApp["scoreText"] != null ? parseInt(playstoreApp["scoreText"]) : null,
+                "rating": playstoreApp["scoreText"] != null ? parseFloat(playstoreApp["scoreText"]) : null,
                 "installs": playstoreApp["installs"],
                 "url": playstoreApp["url"],
                 "type": "playstore"
             });
         });
         appstoreApps.forEach((appstoreApp) => {
+            console.log("Adding appstore app: "+JSON.stringify(appstoreApp));
             appsData.push({
                 "name": appstoreApp["title"],
                 "icon": appstoreApp["icon"],
