@@ -70,10 +70,9 @@ const buildAppstoresFeedMarkdown = (appsData) => {
     const appNamePlaceholder = "{{name}}";
     const appRatingPlaceholder = "{{rating}}";
     const appMetricsPlaceholder = "{{metrics}}";
-    const appLinkPlaceholder = "{{marginRight}}";
+    const appLinkPlaceholder = "{{appLink}}";
     const appLinkImagePlaceholder = "{{appLinkImage}}";
-    const htmlRowElement = `
-    <div class="grid-item">
+    const htmlRowElement = `<div class="grid-item">
         <img class="grid-item-image" src="${appImagePlaceholder}" />
         <div class="grid-item-info">
             <span class="grid-item-title">${appNamePlaceholder}</span>
@@ -83,8 +82,7 @@ const buildAppstoresFeedMarkdown = (appsData) => {
             <span class="grid-item-caption">${appMetricsPlaceholder}</span>
         </div>
         <a class="grid-item-link" href="${appLinkPlaceholder}"><img src="${appLinkImagePlaceholder}"/></a>
-    </div>
-    `;
+    </div>`;
     let newContent = appsData.map((element, index) => {
         // Set Content
         let rowElement = htmlRowElement
@@ -92,12 +90,12 @@ const buildAppstoresFeedMarkdown = (appsData) => {
             .replace(appImagePlaceholder, element["icon"])
             .replace(appRatingPlaceholder, element["rating"])
             .replace(appMetricsPlaceholder, element["type"] === "appstore" ? element["rating_count"] + "reviews" : element["installs"] + "installs")
-            .replace(appLinkImagePlaceholder, element["url"])
+            .replace(appLinkPlaceholder, element["url"])
             .replace(appLinkImagePlaceholder, element["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
         return rowElement;
 
     }).join('');
-    return htmlStartElement + newContent + htmlEndElement;
+    return css + htmlStartElement + newContent + htmlEndElement;
 };
 
 
