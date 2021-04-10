@@ -39,7 +39,7 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
             }
             core.info("Building Appstores Feed SVG");
             // Get icon images as base64
-            appsData = buildAppstoresFeedSvg(appsData);
+            appsData = replaceIconsWithBase64Images(appsData);
             // Build SVG
             const newSvgData = buildAppstoresFeedSvg(appsData);
             core.info("Building updated SVG");
