@@ -1,0 +1,40 @@
+name: 'Appstores Feed Action'
+author: 'Alex Queudot'
+description: 'Show the latest data from your playstore and appstore apps on your github profile or project readme'
+
+inputs:
+  appstore_ids:
+    description: "Comma-separated list of appstore app ids"
+    default: ""
+    required: true
+  playstore_ids:
+    description: "Comma-separated list of playstore app package ids"
+    default: ""
+    required: true
+  gh_token:
+    description: 'GitHub access token with Repo scope'
+    required: false
+    default: ${{ github.token }}
+  readme_path:
+    description: 'Path of the readme file you want to update'
+    default: './README.md'
+    required: false
+  commit_message:
+    description: "Commit message used while committing to the repo"
+    default: "Updated with the latest appstores data"
+    required: false
+  committer_username:
+    description: "Username used while committing to the repo"
+    default: "appstores-feed-bot"
+    required: false
+  committer_email:
+    description: "Email id used while committing to the repo"
+    default: "appstores-feed-bot@example.com"
+    required: false
+
+runs:
+  using: node12
+  main: dist/index.js
+branding:
+  icon: 'activity'
+  color: 'purple'
