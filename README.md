@@ -27,10 +27,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: alqueraf/appstores-feed-action@master
         with:
-          app_ids: "123321,org.example1,321123,org.example2"
+          app_ids: "123321, org.example1, 321123, org.example2"
 ```
-- Replace the above appstore and playstore ids account with your actual apps.
-  > You can retrieve only appstore or playstore apps but at least one must be specified.
+- Replace the above app_ids with your actual apps from the playstore or and the appstore.
+  > Do not add the `id` prefix for appstore apps.
 - Commit and wait for it to run automatically or you can also trigger it manually from the Actions tab to see the result instantly.
 
 ### Options
@@ -38,8 +38,8 @@ This workflow has additional options that you can use to customize it for your u
 
 | Option | Default Value | Description | Required |
 |--------|--------|--------|--------|
-| `app_ids` | `""` | Comma-separated list of appstore app ids from the appstore (without the id prefix) and/or package ids from the playstore, ex: `123321,org.example1,321123,org.example2` | Yes  |
-| `readme_path` | `./README.md` | Path of the readme file you want to update | Yes  |
+| `app_ids` | `""` | Comma-separated list of appstore app ids from the appstore (without the id prefix) and/or package ids from the playstore. Example: `123321,org.example1,321123,org.example2` | Yes  |
+| `readme_path` | `./README.md` | Path of the readme file you want to update | No  |
 | `image_folder_path` | `./app` | Path of the folder to store an svg image for each app | No |
 | `gh_token` | Your GitHub token with repo scope | Use this to configure the token of the user that commits the workflow result to GitHub | No |
 | `commit_message` | `Updated with the latest apps data` | Allows you to customize the commit message | No |
