@@ -315,11 +315,15 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
                 svgData = fs.readFileSync(SVG_FILE_PATH, 'utf8');
             } catch (err) {
                 core.info("Could not read current svg file");
+                core.info(err);
             }
-            core.info("Building Appstores Feed SVG");
             // Get icon images as base64
+            core.info("Getting base64 icons");
             appsData = replaceIconsWithBase64Images(appsData);
+            core.info(appsData);
+            core.info("Base64 icons apps data:" + appsData.map(e => JSON.stringify(e)).join());
             // Build SVG
+            core.info("Building Appstores Feed SVG");
             const newSvgData = buildAppstoresFeedSvg(appsData);
             core.info("Building updated SVG");
             // If there's change in svg file update it
