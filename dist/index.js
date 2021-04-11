@@ -410,7 +410,7 @@ const buildAppstoresFeedSvg = (appsData) => {
             .replace(appImagePlaceholder, element["icon"])
             .replace(appRatingPlaceholder, element["rating"])
             .replace(appMetricsPlaceholder, element["type"] === "appstore" ? element["rating_count"] + " reviews" : element["installs"] + " installs")
-            .replace(appLinkPlaceholder, element["url"].replaceAll("&", "&amp;"))
+            .replace(appLinkPlaceholder, element["url"].replace(/&/g,"&amp;"))
             .replace(appLinkImagePlaceholder, element["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
         return rowElement;
 
@@ -549,8 +549,7 @@ const getBase64FromUrl = async (url) => {
     core.info("Getting base64 image from url "+url);
     const image = await axios.get(url, {responseType: 'arraybuffer'});
     const raw = Buffer.from(image.data).toString('base64');
-    const base64 = "data:" + image.headers["content-type"] + ";base64,"+raw;
-    return base64;
+    return "data:" + image.headers["content-type"] + ";base64,"+raw;
 }
 
 /***/ }),
