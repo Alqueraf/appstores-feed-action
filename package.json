@@ -13,6 +13,7 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "app-store-scraper": "^0.16.3",
-    "google-play-scraper": "^8.0.2"
+    "google-play-scraper": "^8.0.2",
+    "node-fetch": "^2.6.1"
   }
 }

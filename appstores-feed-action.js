@@ -1,5 +1,6 @@
 // Compile this file using: `ncc build appstores-feed-action.js --license licenses.txt`
 const fs = require('fs');
+const fetch = require("node-fetch"); 
 const appstoresService = require('./services/appstores.service');
 
 const core = require('@actions/core');
