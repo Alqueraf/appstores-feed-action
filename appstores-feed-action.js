@@ -1,8 +1,7 @@
 // Compile this file using: `ncc build appstores-feed-action.js --license licenses.txt`
 const fs = require('fs');
-const fetch = require("node-fetch"); 
 const appstoresService = require('./services/appstores.service');
-var FileReader = require('filereader');
+const axios = require('axios');
 
 const core = require('@actions/core');
 const process = require('process');
@@ -260,15 +259,9 @@ const playstoreCtaBase64Image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA
 
 const getBase64FromUrl = async (url) => {
     core.info("Getting base64 image from url "+url);
-    const data = await fetch(url);
-    const blob = await data.blob();
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = () => {
-            const base64data = reader.result;
-            core.info("Got base64 "+base64data);
-            resolve(base64data);
-        }
-    });
+    const image = await axios.get(url, {responseType: 'arraybuffer'});
+    const raw = Buffer.from(image.data).toString('base64');
+    const base64 = "data:" + image.headers["content-type"] + ";base64,"+raw;
+    core.info("Got base64 image: "+base64);
+    return base64;
 }
