@@ -15,9 +15,13 @@ inputs:
     description: 'GitHub access token with Repo scope'
     required: false
     default: ${{ github.token }}
-  svg_path:
-    description: 'Path of the svg file you want to update'
+  image_folder_path:
+    description: 'Path of the folder to store images'
     default: './apps'
+    required: false
+  readme_path:
+    description: 'Path of the readme file you want to update'
+    default: './README.md'
     required: false
   commit_message:
     description: "Commit message used while committing to the repo"

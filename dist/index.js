@@ -296,8 +296,9 @@ const exec = __webpack_require__(68052);
 
 let jobFailFlag = false; // Job status flag
 
-// Svg file path, default: ./images/appstores.svg
-const SVG_FILE_PATH = core.getInput('svg_path');
+const README_FILE_PATH = core.getInput('readme_path');
+const IMAGE_FOLDER_PATH = core.getInput('image_folder_path');
+
 const GITHUB_TOKEN = core.getInput('gh_token');
 
 // Reading account from the workflow input
@@ -321,7 +322,7 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
             // core.info("Reading SVG file");
             // let svgData = "";
             // try {
-            //     svgData = fs.readFileSync(SVG_FILE_PATH, 'utf8');
+            //     svgData = fs.readFileSync(IMAGE_FOLDER_PATH, 'utf8');
             // } catch (err) {
             //     core.info("Could not read current svg file");
             //     core.info(err);
@@ -334,7 +335,7 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
             const svgsData = appsData.map(e => buildAppSvg(e));
             // Create directory if not exists
             // Creates /tmp/a/apple, regardless of whether `/tmp` and /tmp/a exist.
-            fs.mkdirSync(SVG_FILE_PATH, {
+            fs.mkdirSync(IMAGE_FOLDER_PATH, {
                 recursive: true
             }, (e) => {
                 core.info('Could not create SVG file directory');
@@ -342,24 +343,27 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
                 process.exit(1);
             });
             // Write svg files
-            appsData.forEach((app, index) => {
-                const fileName = SVG_FILE_PATH + "/" + app["id"] + ".svg";
+            const imagePaths = appsData.map((app, index) => {
+                const fileName = IMAGE_FOLDER_PATH + "/" + app["id"] + ".svg";
                 core.info('Writing to ' + fileName);
                 fs.writeFileSync(fileName, svgsData[index]);
+                return fileName;
             });
-            // TODO: Update README
-            // TODO: Check if changes
+            // Get current README
+            core.info("Reading README file");
+            const readmeData = fs.readFileSync(README_FILE_PATH, 'utf8');
+            // Prepare new README
+            core.info("Building update README");
+            const appsSection = buildReadmeAppsSection(imagePaths);
+            core.info(appsSection);
+            const newReadme = buildReadme(readmeData, appsSection);
+            if (newReadme !== readmeData) {
+                core.info('Writing to ' + README_FILE_PATH);
+                fs.writeFileSync(README_FILE_PATH, newReadme);
+            }
+            // TODO: Check if changes?
             core.info("Comitting and pushing changes");
             await commitAndPush();
-            // // If there's change in svg file update it
-            // if (newSvgData !== svgData) {
-            //     core.info('Writing to ' + SVG_FILE_PATH);
-            //     fs.writeFileSync(SVG_FILE_PATH, newSvgData);
-            //     await commitSvg();
-            // } else {
-            //     core.info('No change detected, skipping');
-            //     process.exit(0);
-            // }
         } catch (e) {
             core.error(e);
             process.exit(1);
@@ -391,7 +395,7 @@ const replaceIconsWithBase64Images = async (appsData) => {
 const buildAppSvg = (app) => {
     // Truncate app name
     var appName = app["name"].trim().replace(/(\r\n|\n|\r)/gm, " ");
-    if(appName.length > 17) {
+    if (appName.length > 17) {
         appName = appName.substring(0, 15) + "...";
     }
     // Placeholders
@@ -435,47 +439,66 @@ const buildAppSvg = (app) => {
     return (htmlStartElement + svgElement + htmlEndElement).trim();
 };
 
+/**
+ * Builds the readme section for the svg images
+ * @param imagePaths {array}: list of image paths
+ * @return {string}: html content with images
+ */
+const buildReadmeAppsSection = (imagePaths) => {
+    // Placeholders
+    const imageSrcPlaceholder = "{{imageSrc}}";
+    // Prepare HTML block
+    const htmlStartElement = `
+<div style="display:grid; 
+            grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+            max-width: 660px;">`;
+    const htmlEndElement = `</div>`;
+    const htmlImageElement = `<img src="${imageSrcPlaceholder}"/>`;
+    // Create <img> array
+    const htmlImages = imagePaths.map(e => htmlImageElement.replace(imageSrcPlaceholder, e) + "\n");
+    return (htmlStartElement + htmlImages.join('') + htmlEndElement).trim();
+}
 
-// /**
-//  * Builds the new readme by replacing the readme's <!-- APPSTORES-FEED:START --><!-- APPSTORES-FEED:END --> tags
-//  * @param previousContent {string}: actual readme content
-//  * @param newContent {string}: content to add
-//  * @return {string}: content after combining previousContent and newContent
-//  */
-// const buildReadme = (previousContent, newContent) => {
-//     const tagToLookFor = `<!-- APPSTORES-FEED:`;
-//     const closingTag = '-->';
-//     const tagNewlineFlag = true;
-//     const startOfOpeningTagIndex = previousContent.indexOf(
-//         `${tagToLookFor}START`,
-//     );
-//     const endOfOpeningTagIndex = previousContent.indexOf(
-//         closingTag,
-//         startOfOpeningTagIndex,
-//     );
-//     const startOfClosingTagIndex = previousContent.indexOf(
-//         `${tagToLookFor}END`,
-//         endOfOpeningTagIndex,
-//     );
-//     if (
-//         startOfOpeningTagIndex === -1 ||
-//         endOfOpeningTagIndex === -1 ||
-//         startOfClosingTagIndex === -1
-//     ) {
-//         // Exit with error if comment is not found on the readme
-//         core.error(
-//             `Cannot find the comment tag on the readme:\n${tagToLookFor}:START -->\n${tagToLookFor}:END -->`
-//         );
-//         process.exit(1);
-//     }
-//     return [
-//         previousContent.slice(0, endOfOpeningTagIndex + closingTag.length),
-//         tagNewlineFlag ? '\n' : '',
-//         newContent,
-//         tagNewlineFlag ? '\n' : '',
-//         previousContent.slice(startOfClosingTagIndex),
-//     ].join('');
-// };
+/**
+ * Builds the new readme by replacing the readme's <!-- APPSTORES-FEED:START --><!-- APPSTORES-FEED:END --> tags
+ * @param previousContent {string}: actual readme content
+ * @param newContent {string}: content to add
+ * @return {string}: content after combining previousContent and newContent
+ */
+const buildReadme = (previousContent, newContent) => {
+    const tagToLookFor = `<!-- APPSTORES-FEED:`;
+    const closingTag = '-->';
+    const tagNewlineFlag = true;
+    const startOfOpeningTagIndex = previousContent.indexOf(
+        `${tagToLookFor}START`,
+    );
+    const endOfOpeningTagIndex = previousContent.indexOf(
+        closingTag,
+        startOfOpeningTagIndex,
+    );
+    const startOfClosingTagIndex = previousContent.indexOf(
+        `${tagToLookFor}END`,
+        endOfOpeningTagIndex,
+    );
+    if (
+        startOfOpeningTagIndex === -1 ||
+        endOfOpeningTagIndex === -1 ||
+        startOfClosingTagIndex === -1
+    ) {
+        // Exit with error if comment is not found on the readme
+        core.error(
+            `Cannot find the comment tag on the readme:\n${tagToLookFor}:START -->\n${tagToLookFor}:END -->`
+        );
+        process.exit(1);
+    }
+    return [
+        previousContent.slice(0, endOfOpeningTagIndex + closingTag.length),
+        tagNewlineFlag ? '\n' : '',
+        newContent,
+        tagNewlineFlag ? '\n' : '',
+        previousContent.slice(startOfClosingTagIndex),
+    ].join('');
+};
 
 /**
  * Code to do git commit
