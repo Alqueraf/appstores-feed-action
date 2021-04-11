@@ -329,7 +329,6 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
             // Get icon images as base64
             core.info("Getting base64 icons");
             appsData = await replaceIconsWithBase64Images(appsData);
-            core.info("Base64 icons apps data:" + appsData.map(e => JSON.stringify(e)).join());
             // Build SVG
             core.info("Building Apps SVGs");
             const svgsData = appsData.map(e => buildAppSvg(e));
@@ -498,7 +497,7 @@ const commitAndPush = async () => {
         ]);
     }
     await exec('git', ['config', '--global', 'user.name', committerUsername]);
-    await exec('git', ['add -A']);
+    await exec('git', ['add', '-A']);
     await exec('git', ['commit', '-m', commitMessage]);
     await exec('git', ['pull', '--ff-only']);
     await exec('git', ['push']);
