@@ -393,7 +393,6 @@ const buildAppSvg = (app) => {
     const appImagePlaceholder = "{{image}}";
     const appNamePlaceholder = "{{name}}";
     const appRatingPlaceholder = "{{rating}}";
-    const appMetricsElementPlaceholder = "{{appMetrics}}";
     const appMetricsPlaceholder = "{{metrics}}";
     const appLinkPlaceholder = "{{appLink}}";
     const appLinkImagePlaceholder = "{{appLinkImage}}";
@@ -406,14 +405,13 @@ const buildAppSvg = (app) => {
     const htmlEndElement = `
     </foreignObject>
 </svg>`;
-    const appMetricsElement = `<p class="grid-item-caption">${appMetricsPlaceholder}</p>`;
     const htmlRowElement = `
 <div xmlns="http://www.w3.org/1999/xhtml"  class="grid-item">
     <img class="grid-item-image" src="${appImagePlaceholder}"/>
     <div class="grid-item-info">
         <p class="grid-item-title">${appNamePlaceholder}</p>
         <p class="grid-item-rating">⭐️ ${appRatingPlaceholder}</p>
-        ${appMetricsElementPlaceholder}
+        <p class="grid-item-caption">${appMetricsPlaceholder}</p>
     </div>
     <a class="grid-item-link" target="_blank" xlink:href="${appLinkPlaceholder}">
         <img height="30px" src="${appLinkImagePlaceholder}"/>
@@ -425,7 +423,7 @@ const buildAppSvg = (app) => {
         .replace(appNamePlaceholder, app["name"].trim().replace(/(\r\n|\n|\r)/gm, " "))
         .replace(appImagePlaceholder, app["icon"])
         .replace(appRatingPlaceholder, app["rating"])
-        .replace(appMetricsElementPlaceholder, app["type"] === "appstore" ? "" : appMetricsElement.replace(appMetricsPlaceholder, app["installs"] + " installs"))
+        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? "" : app["installs"] + " installs")
         .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
         .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
 
@@ -508,7 +506,7 @@ const commitAndPush = async () => {
 
 // MARK: Styling
 const itemWidth = 300;
-const itemHeight = 135;
+const itemHeight = 105;
 const css = `
 <style>
 .grid-item {
@@ -533,6 +531,9 @@ const css = `
 
 .grid-item-title {
     font-weight: bold;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .grid-item-rating {
