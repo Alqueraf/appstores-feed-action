@@ -318,32 +318,40 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
     } else {
         try {
             core.info("Got apps data:" + appsData.map(e => JSON.stringify(e)).join());
-            core.info("Reading SVG file");
-            let svgData = "";
-            try {
-                svgData = fs.readFileSync(SVG_FILE_PATH, 'utf8');
-            } catch (err) {
-                core.info("Could not read current svg file");
-                core.info(err);
-            }
+            // core.info("Reading SVG file");
+            // let svgData = "";
+            // try {
+            //     svgData = fs.readFileSync(SVG_FILE_PATH, 'utf8');
+            // } catch (err) {
+            //     core.info("Could not read current svg file");
+            //     core.info(err);
+            // }
             // Get icon images as base64
             core.info("Getting base64 icons");
             appsData = await replaceIconsWithBase64Images(appsData);
-            core.info(appsData);
             core.info("Base64 icons apps data:" + appsData.map(e => JSON.stringify(e)).join());
             // Build SVG
-            core.info("Building Appstores Feed SVG");
-            const newSvgData = buildAppstoresFeedSvg(appsData);
-            core.info("Building updated SVG");
-            // If there's change in svg file update it
-            if (newSvgData !== svgData) {
-                core.info('Writing to ' + SVG_FILE_PATH);
-                fs.writeFileSync(SVG_FILE_PATH, newSvgData);
-                await commitSvg();
-            } else {
-                core.info('No change detected, skipping');
-                process.exit(0);
-            }
+            core.info("Building Apps SVGs");
+            const svgsData = appsData.map(e => buildAppSvg(e));
+            // Write svg files
+            appsData.forEach((app, index) => {
+                const fileName = SVG_FILE_PATH + app["id"] + ".svg";
+                core.info('Writing to ' + fileName);
+                fs.writeFileSync(fileName, svgsData[index]);
+            });
+            // TODO: Update README
+            // TODO: Check if changes
+            core.info("Comitting and pushing changes");
+            await commitAndPush();
+            // // If there's change in svg file update it
+            // if (newSvgData !== svgData) {
+            //     core.info('Writing to ' + SVG_FILE_PATH);
+            //     fs.writeFileSync(SVG_FILE_PATH, newSvgData);
+            //     await commitSvg();
+            // } else {
+            //     core.info('No change detected, skipping');
+            //     process.exit(0);
+            // }
         } catch (e) {
             core.error(e);
             process.exit(1);
@@ -368,54 +376,52 @@ const replaceIconsWithBase64Images = async (appsData) => {
 }
 
 /**
- * Converts a list of apps data to SVG
- * @param appsData {array}: list of apps data to display
- * @return {string}: content after converting posts array to svg
+ * Converts an app data to svg file string
+ * @param app {Object}: app data to display
+ * @return {string}: content after converting object data to svg
  */
-const buildAppstoresFeedSvg = (appsData) => {
-    // Prepare HTML block
-    const rowHeight = 135;
-    const rows = Math.ceil(appsData.length / 2);
-    const htmlStartElement = `
-<svg width="800" height="${rowHeight * rows}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <foreignObject width="100%" height="100%">
-        ${css}
-        <div xmlns="http://www.w3.org/1999/xhtml" class="grid-container">`;
-    const htmlEndElement = `
-        </div>
-    </foreignObject>
-</svg>`;
+const buildAppSvg = (app) => {
+    // Placeholders
     const appImagePlaceholder = "{{image}}";
     const appNamePlaceholder = "{{name}}";
     const appRatingPlaceholder = "{{rating}}";
+    const appMetricsElementPlaceholder = "{{appMetrics}}";
     const appMetricsPlaceholder = "{{metrics}}";
     const appLinkPlaceholder = "{{appLink}}";
     const appLinkImagePlaceholder = "{{appLinkImage}}";
+
+    // Prepare HTML block
+    const htmlStartElement = `
+<svg width="${itemWidth}" height="${itemHeight}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <foreignObject width="100%" height="100%">
+        ${css}`;
+    const htmlEndElement = `
+    </foreignObject>
+</svg>`;
+    const appMetricsElement = `<p class="grid-item-caption">${appMetricsPlaceholder}</p>`;
     const htmlRowElement = `
-<div class="grid-item">
+<div xmlns="http://www.w3.org/1999/xhtml"  class="grid-item">
     <img class="grid-item-image" src="${appImagePlaceholder}"/>
     <div class="grid-item-info">
         <p class="grid-item-title">${appNamePlaceholder}</p>
         <p class="grid-item-rating">⭐️ ${appRatingPlaceholder}</p>
-        <p class="grid-item-caption">${appMetricsPlaceholder}</p>
+        ${appMetricsElementPlaceholder}
     </div>
     <a class="grid-item-link" target="_blank" xlink:href="${appLinkPlaceholder}">
         <img height="30px" src="${appLinkImagePlaceholder}"/>
     </a>
 </div>`;
-    let newContent = appsData.map((element, index) => {
-        // Set Content
-        let rowElement = htmlRowElement
-            .replace(appNamePlaceholder, element["name"].trim().replace(/(\r\n|\n|\r)/gm, " "))
-            .replace(appImagePlaceholder, element["icon"])
-            .replace(appRatingPlaceholder, element["rating"])
-            .replace(appMetricsPlaceholder, element["type"] === "appstore" ? element["rating_count"] + " reviews" : element["installs"] + " installs")
-            .replace(appLinkPlaceholder, element["url"].replace(/&/g,"&amp;"))
-            .replace(appLinkImagePlaceholder, element["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
-        return rowElement;
 
-    }).join('');
-    return (htmlStartElement + newContent + htmlEndElement).trim();
+    // Set Content
+    let svgElement = htmlRowElement
+        .replace(appNamePlaceholder, app["name"].trim().replace(/(\r\n|\n|\r)/gm, " "))
+        .replace(appImagePlaceholder, app["icon"])
+        .replace(appRatingPlaceholder, app["rating"])
+        .replace(appMetricsElementPlaceholder, app["type"] === "appstore" ? "" : appMetricsElement.replace(appMetricsPlaceholder, app["installs"] + " installs"))
+        .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
+        .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
+
+    return (htmlStartElement + svgElement + htmlEndElement).trim();
 };
 
 
@@ -464,7 +470,7 @@ const buildAppstoresFeedSvg = (appsData) => {
  * Code to do git commit
  * @return {Promise<void>}
  */
-const commitSvg = async () => {
+const commitAndPush = async () => {
     // Getting config
     const committerUsername = core.getInput('committer_username');
     const committerEmail = core.getInput('committer_email');
@@ -483,7 +489,7 @@ const commitSvg = async () => {
         ]);
     }
     await exec('git', ['config', '--global', 'user.name', committerUsername]);
-    await exec('git', ['add', SVG_FILE_PATH]);
+    await exec('git', ['add -A']);
     await exec('git', ['commit', '-m', commitMessage]);
     await exec('git', ['pull', '--ff-only']);
     await exec('git', ['push']);
@@ -493,15 +499,10 @@ const commitSvg = async () => {
 };
 
 // MARK: Styling
+const itemWidth = 300;
+const itemHeight = 135;
 const css = `
 <style>
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    max-width: 650px;
-    grid-gap: 2rem;
-}
-
 .grid-item {
     width: 300px;
     border-bottom: 1px solid rgba(236, 236, 236, 1);
@@ -546,10 +547,12 @@ const appstoreCtaBase64Image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAf
 const playstoreCtaBase64Image = "data:image/png;base64,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";
 
 const getBase64FromUrl = async (url) => {
-    core.info("Getting base64 image from url "+url);
-    const image = await axios.get(url, {responseType: 'arraybuffer'});
+    core.info("Getting base64 image from url " + url);
+    const image = await axios.get(url, {
+        responseType: 'arraybuffer'
+    });
     const raw = Buffer.from(image.data).toString('base64');
-    return "data:" + image.headers["content-type"] + ";base64,"+raw;
+    return "data:" + image.headers["content-type"] + ";base64," + raw;
 }
 
 /***/ }),
@@ -107614,6 +107617,7 @@ class AppstoresService {
         playstoreApps.forEach((playstoreApp) => {
             console.log("Adding playstore app: "+JSON.stringify(playstoreApp));
             appsData.push({
+                "id": playstoreApp["appId"],
                 "name": playstoreApp["title"],
                 "icon": playstoreApp["icon"],
                 "rating": playstoreApp["scoreText"] != null ? parseFloat(playstoreApp["scoreText"]) : null,
@@ -107625,6 +107629,7 @@ class AppstoresService {
         appstoreApps.forEach((appstoreApp) => {
             console.log("Adding appstore app: "+JSON.stringify(appstoreApp));
             appsData.push({
+                "id": appstoreApp["id"],
                 "name": appstoreApp["title"],
                 "icon": appstoreApp["icon"],
                 "rating": appstoreApp["score"],
