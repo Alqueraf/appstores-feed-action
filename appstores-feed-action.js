@@ -2,6 +2,7 @@
 const fs = require('fs');
 const fetch = require("node-fetch"); 
 const appstoresService = require('./services/appstores.service');
+var FileReader = require('filereader');
 
 const core = require('@actions/core');
 const process = require('process');
