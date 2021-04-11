@@ -72,7 +72,7 @@ appstoresService.getLatestAppsData(appIds).then(async appsData => {
             });
             // Prepare new README
             core.info("Building update README");
-            const appsSection = buildReadmeAppsSection(imagePaths);
+            const appsSection = buildReadmeAppsSection(imagesPathAndUrl);
             core.info(appsSection);
             const newReadme = buildReadme(readmeData, appsSection);
             if (newReadme !== readmeData) {
