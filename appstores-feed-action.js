@@ -102,6 +102,11 @@ const replaceIconsWithBase64Images = async (appsData) => {
  * @return {string}: content after converting object data to svg
  */
 const buildAppSvg = (app) => {
+    // Truncate app name
+    var appName = app["name"].trim().replace(/(\r\n|\n|\r)/gm, " ");
+    if(appName.length > 17) {
+        appName = appName.substring(0, 15) + "...";
+    }
     // Placeholders
     const appImagePlaceholder = "{{image}}";
     const appNamePlaceholder = "{{name}}";
@@ -133,7 +138,7 @@ const buildAppSvg = (app) => {
 
     // Set Content
     let svgElement = htmlRowElement
-        .replace(appNamePlaceholder, app["name"].trim().replace(/(\r\n|\n|\r)/gm, " "))
+        .replace(appNamePlaceholder, appName)
         .replace(appImagePlaceholder, app["icon"])
         .replace(appRatingPlaceholder, app["rating"])
         .replace(appMetricsPlaceholder, app["type"] === "appstore" ? "" : app["installs"] + " installs")
@@ -219,11 +224,11 @@ const commitAndPush = async () => {
 
 // MARK: Styling
 const itemWidth = 300;
-const itemHeight = 105;
+const itemHeight = 69;
 const css = `
 <style>
 .grid-item {
-    width: 300px;
+    width: ${itemWidth}px;
     border-bottom: 1px solid rgba(236, 236, 236, 1);
     display: grid;
     grid-template-columns: auto auto auto;
@@ -244,21 +249,21 @@ const css = `
 
 .grid-item-title {
     font-weight: bold;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
 .grid-item-rating {
 }
 
 .grid-item-caption {
-    font-size: 12px
+    font-size: 12px;
+    height: 12px;
+    margin-top: 2px;
 }
 
 .grid-item-link {
     margin-left: 10px;
 }
+
 p {
     margin: 0;
 }
