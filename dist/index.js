@@ -107657,10 +107657,10 @@ class AppstoresService {
     async getLatestAppsData(appIds) {
         const storeRequests = appIds.map(id => id.includes(".") ?
             playstoreScrapper.app({
-                appId: e
+                appId: id
             }) :
             appstoreScrapper.app({
-                id: e,
+                id: id,
                 ratings: true
             }));
 
