@@ -333,9 +333,18 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
             // Build SVG
             core.info("Building Apps SVGs");
             const svgsData = appsData.map(e => buildAppSvg(e));
+            // Create directory if not exists
+            // Creates /tmp/a/apple, regardless of whether `/tmp` and /tmp/a exist.
+            fs.mkdirSync(SVG_FILE_PATH, {
+                recursive: true
+            }, (e) => {
+                core.info('Could not create SVG file directory');
+                core.error(e);
+                process.exit(1);
+            });
             // Write svg files
             appsData.forEach((app, index) => {
-                const fileName = SVG_FILE_PATH + app["id"] + ".svg";
+                const fileName = SVG_FILE_PATH + "/" + app["id"] + ".svg";
                 core.info('Writing to ' + fileName);
                 fs.writeFileSync(fileName, svgsData[index]);
             });
