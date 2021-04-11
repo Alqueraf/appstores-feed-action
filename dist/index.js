@@ -350,6 +350,13 @@ appstoresService.getLatestAppsData(appIds).then(async appsData => {
             // Get current README
             core.info("Reading README file");
             const readmeData = fs.readFileSync(README_FILE_PATH, 'utf8');
+            // Create path + url image list
+            const imagesPathAndUrl = imagePaths.map((e, index) => {
+                return {
+                    "path": e,
+                    "url": appsData[index]["url"]
+                }
+            });
             // Prepare new README
             core.info("Building update README");
             const appsSection = buildReadmeAppsSection(imagePaths);
@@ -396,6 +403,8 @@ const buildAppSvg = (app) => {
     if (appName.length > 17) {
         appName = appName.substring(0, 15) + "...";
     }
+    // Set fixed rating count
+    const rating = (Math.round(app["rating"] * 100) / 100).toFixed(1);
     // Placeholders
     const appImagePlaceholder = "{{image}}";
     const appNamePlaceholder = "{{name}}";
@@ -429,8 +438,8 @@ const buildAppSvg = (app) => {
     let svgElement = htmlRowElement
         .replace(appNamePlaceholder, appName)
         .replace(appImagePlaceholder, app["icon"])
-        .replace(appRatingPlaceholder, app["rating"])
-        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"] : app["installs"] + " installs")
+        .replace(appRatingPlaceholder, rating !== "0.0" ? rating : "?")
+        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"].replace(/&/g, "&amp;") : app["installs"] + " installs")
         .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
         .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
 
@@ -439,12 +448,13 @@ const buildAppSvg = (app) => {
 
 /**
  * Builds the readme section for the svg images
- * @param imagePaths {array}: list of image paths
+ * @param imagesPathAndUrl {array}: list of {"path" : imagePath, "url": appUrl}
  * @return {string}: html content with images
  */
-const buildReadmeAppsSection = (imagePaths) => {
+const buildReadmeAppsSection = (imagesPathAndUrl) => {
     // Placeholders
     const imageSrcPlaceholder = "{{imageSrc}}";
+    const urlPlaceholder = "{{url}}";
     // Prepare HTML block
     const htmlStartElement = `
 <div style="display:grid; 
@@ -452,9 +462,12 @@ const buildReadmeAppsSection = (imagePaths) => {
             max-width: 660px;">
 `;
     const htmlEndElement = `</div>`;
-    const htmlImageElement = `<img src="${imageSrcPlaceholder}"/>`;
+    const htmlImageElement = `<a href="${urlPlaceholder}"><img src="${imageSrcPlaceholder}"/></a>`;
     // Create <img> array
-    const htmlImages = imagePaths.map(e => htmlImageElement.replace(imageSrcPlaceholder, e) + "\n");
+    const htmlImages = imagesPathAndUrl.map(e => htmlImageElement
+        .replace(imageSrcPlaceholder, e["path"])
+        .replace(urlPlaceholder, e["url"])
+         + "\n");
     return (htmlStartElement + htmlImages.join('') + htmlEndElement).trim();
 }
 
@@ -107642,41 +107655,87 @@ class AppstoresService {
      * @param {[string]} appIds Apps to crawl
      */
     async getLatestAppsData(appIds) {
-        const playstoreIds = appIds.filter(e => e.includes("."));
-        const appstoreIds = appIds.filter(e => !e.includes("."));
-        const playstoreRequests = playstoreIds.map(e => playstoreScrapper.app({appId: e}));
-        const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({id: e, ratings: true}));
+        const storeRequests = appIds.map(id => id.includes(".") ?
+            playstoreScrapper.app({
+                appId: e
+            }) :
+            appstoreScrapper.app({
+                id: e,
+                ratings: true
+            }));
 
-        const playstoreApps = await Promise.all(playstoreRequests);
-        const appstoreApps = await Promise.all(appstoreRequests);
-        
         let appsData = [];
-        playstoreApps.forEach((playstoreApp) => {
-            console.log("Adding playstore app: "+JSON.stringify(playstoreApp));
-            appsData.push({
-                "id": playstoreApp["appId"],
-                "name": playstoreApp["title"],
-                "icon": playstoreApp["icon"],
-                "rating": playstoreApp["scoreText"] != null ? parseFloat(playstoreApp["scoreText"]) : null,
-                "installs": playstoreApp["installs"],
-                "url": playstoreApp["url"],
-                "type": "playstore"
-            });
-        });
-        appstoreApps.forEach((appstoreApp) => {
-            console.log("Adding appstore app: "+JSON.stringify(appstoreApp));
-            appsData.push({
-                "id": appstoreApp["id"],
-                "name": appstoreApp["title"],
-                "icon": appstoreApp["icon"],
-                "rating": appstoreApp["score"],
-                "rating_count": appstoreApp["ratings"],
-                "url": appstoreApp["url"],
-                "primaryGenre" : appstoreApp["primaryGenre"],
-                "type": "appstore"
-            });
+        const storeApps = await Promise.all(storeRequests);
+        storeApps.forEach((app, index) => {
+            if (appIds[index].includes(".")) {
+                // Plasytore App
+                console.log("Adding playstore app: " + JSON.stringify(app));
+                appsData.push({
+                    "id": app["appId"],
+                    "name": app["title"],
+                    "icon": app["icon"],
+                    "rating": app["scoreText"] != null ? parseFloat(app["scoreText"]) : null,
+                    "installs": app["installs"],
+                    "url": app["url"],
+                    "type": "playstore"
+                });
+            } else {
+                // Appstore App
+                console.log("Adding appstore app: " + JSON.stringify(app));
+                appsData.push({
+                    "id": app["id"],
+                    "name": app["title"],
+                    "icon": app["icon"],
+                    "rating": app["score"],
+                    "rating_count": app["ratings"],
+                    "url": app["url"],
+                    "primaryGenre": app["primaryGenre"],
+                    "type": "appstore"
+                });
+            }
         });
         return appsData;
+
+        // const playstoreIds = appIds.filter(e => e.includes("."));
+        // const appstoreIds = appIds.filter(e => !e.includes("."));
+        // const playstoreRequests = playstoreIds.map(e => playstoreScrapper.app({
+        //     appId: e
+        // }));
+        // const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({
+        //     id: e,
+        //     ratings: true
+        // }));
+
+        // const playstoreApps = await Promise.all(playstoreRequests);
+        // const appstoreApps = await Promise.all(appstoreRequests);
+
+        // let appsData = [];
+        // playstoreApps.forEach((playstoreApp) => {
+        //     console.log("Adding playstore app: " + JSON.stringify(playstoreApp));
+        //     appsData.push({
+        //         "id": playstoreApp["appId"],
+        //         "name": playstoreApp["title"],
+        //         "icon": playstoreApp["icon"],
+        //         "rating": playstoreApp["scoreText"] != null ? parseFloat(playstoreApp["scoreText"]) : null,
+        //         "installs": playstoreApp["installs"],
+        //         "url": playstoreApp["url"],
+        //         "type": "playstore"
+        //     });
+        // });
+        // appstoreApps.forEach((appstoreApp) => {
+        //     console.log("Adding appstore app: " + JSON.stringify(appstoreApp));
+        //     appsData.push({
+        //         "id": appstoreApp["id"],
+        //         "name": appstoreApp["title"],
+        //         "icon": appstoreApp["icon"],
+        //         "rating": appstoreApp["score"],
+        //         "rating_count": appstoreApp["ratings"],
+        //         "url": appstoreApp["url"],
+        //         "primaryGenre": appstoreApp["primaryGenre"],
+        //         "type": "appstore"
+        //     });
+        // });
+        // return appsData;
     }
 }
 
