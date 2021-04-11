@@ -12,7 +12,7 @@ inputs:
     required: false
     default: ${{ github.token }}
   image_folder_path:
-    description: 'Path of the folder to store images'
+    description: 'Path of the folder to store an svg image for each app'
     default: './apps'
     required: false
   readme_path:

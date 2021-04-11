@@ -317,22 +317,13 @@ appstoresService.getLatestAppsData(appIds).then(async appsData => {
     } else {
         try {
             core.info("Got apps data:" + appsData.map(e => JSON.stringify(e)).join());
-            // core.info("Reading SVG file");
-            // let svgData = "";
-            // try {
-            //     svgData = fs.readFileSync(IMAGE_FOLDER_PATH, 'utf8');
-            // } catch (err) {
-            //     core.info("Could not read current svg file");
-            //     core.info(err);
-            // }
             // Get icon images as base64
             core.info("Getting base64 icons");
             appsData = await replaceIconsWithBase64Images(appsData);
             // Build SVG
             core.info("Building Apps SVGs");
             const svgsData = appsData.map(e => buildAppSvg(e));
-            // Create directory if not exists
-            // Creates /tmp/a/apple, regardless of whether `/tmp` and /tmp/a exist.
+            // Create directory recursively if not exists
             fs.mkdirSync(IMAGE_FOLDER_PATH, {
                 recursive: true
             }, (e) => {
@@ -107695,47 +107686,6 @@ class AppstoresService {
             }
         });
         return appsData;
-
-        // const playstoreIds = appIds.filter(e => e.includes("."));
-        // const appstoreIds = appIds.filter(e => !e.includes("."));
-        // const playstoreRequests = playstoreIds.map(e => playstoreScrapper.app({
-        //     appId: e
-        // }));
-        // const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({
-        //     id: e,
-        //     ratings: true
-        // }));
-
-        // const playstoreApps = await Promise.all(playstoreRequests);
-        // const appstoreApps = await Promise.all(appstoreRequests);
-
-        // let appsData = [];
-        // playstoreApps.forEach((playstoreApp) => {
-        //     console.log("Adding playstore app: " + JSON.stringify(playstoreApp));
-        //     appsData.push({
-        //         "id": playstoreApp["appId"],
-        //         "name": playstoreApp["title"],
-        //         "icon": playstoreApp["icon"],
-        //         "rating": playstoreApp["scoreText"] != null ? parseFloat(playstoreApp["scoreText"]) : null,
-        //         "installs": playstoreApp["installs"],
-        //         "url": playstoreApp["url"],
-        //         "type": "playstore"
-        //     });
-        // });
-        // appstoreApps.forEach((appstoreApp) => {
-        //     console.log("Adding appstore app: " + JSON.stringify(appstoreApp));
-        //     appsData.push({
-        //         "id": appstoreApp["id"],
-        //         "name": appstoreApp["title"],
-        //         "icon": appstoreApp["icon"],
-        //         "rating": appstoreApp["score"],
-        //         "rating_count": appstoreApp["ratings"],
-        //         "url": appstoreApp["url"],
-        //         "primaryGenre": appstoreApp["primaryGenre"],
-        //         "type": "appstore"
-        //     });
-        // });
-        // return appsData;
     }
 }
 

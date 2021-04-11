@@ -30,22 +30,13 @@ appstoresService.getLatestAppsData(appIds).then(async appsData => {
     } else {
         try {
             core.info("Got apps data:" + appsData.map(e => JSON.stringify(e)).join());
-            // core.info("Reading SVG file");
-            // let svgData = "";
-            // try {
-            //     svgData = fs.readFileSync(IMAGE_FOLDER_PATH, 'utf8');
-            // } catch (err) {
-            //     core.info("Could not read current svg file");
-            //     core.info(err);
-            // }
             // Get icon images as base64
             core.info("Getting base64 icons");
             appsData = await replaceIconsWithBase64Images(appsData);
             // Build SVG
             core.info("Building Apps SVGs");
             const svgsData = appsData.map(e => buildAppSvg(e));
-            // Create directory if not exists
-            // Creates /tmp/a/apple, regardless of whether `/tmp` and /tmp/a exist.
+            // Create directory recursively if not exists
             fs.mkdirSync(IMAGE_FOLDER_PATH, {
                 recursive: true
             }, (e) => {

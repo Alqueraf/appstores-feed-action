@@ -27,8 +27,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: alqueraf/appstores-feed-action@master
         with:
-          appstore_ids: "123321,321123"
-          playstore_ids: "org.example1,org.example2"
+          app_ids: "123321,org.example1,321123,org.example2"
 ```
 - Replace the above appstore and playstore ids account with your actual apps.
   > You can retrieve only appstore or playstore apps but at least one must be specified.
@@ -39,20 +38,19 @@ This workflow has additional options that you can use to customize it for your u
 
 | Option | Default Value | Description | Required |
 |--------|--------|--------|--------|
-| `appstore_ids` | `""` | Comma-separated list of appstore app ids, ex: `123321,321123` | Yes  |
-| `playstore_ids` | `""` | Comma-separated list of playstore app package ids, ex: `org.example1,org.example2` | Yes  |
-| `svg_path` | `./images/appstores.svg` | Path of the svg file you want to update | No |
+| `app_ids` | `""` | Comma-separated list of appstore app ids from the appstore (without the id prefix) and/or package ids from the playstore, ex: `123321,org.example1,321123,org.example2` | Yes  |
+| `readme_path` | `./README.md` | Path of the readme file you want to update | Yes  |
+| `image_folder_path` | `./app` | Path of the folder to store an svg image for each app | No |
 | `gh_token` | Your GitHub token with repo scope | Use this to configure the token of the user that commits the workflow result to GitHub | No |
 | `commit_message` | `Updated with the latest apps data` | Allows you to customize the commit message | No |
 | `committer_username` | `appstores-feed-bot` | Allows you to customize the committer username | No |
 | `committer_email` | `appstores-feed-bot@example.com` | Allows you to customize the committer email | No |
 
 ### Contributing
-I'm not a designer nor a web developer, so feel free to open a PR with improvements on the current layout. 
+Feel free to open an issue to discuss or send a PR directly with the improvements.
 
 ### Bugs
 If you are experiencing any bugs, don’t forget to open a [new issue](https://github.com/alqueraf/appstores-feed-action/issues/new).
-
 
 ### Liked it?
 Hope you liked this project, don't forget to give it a star ⭐
