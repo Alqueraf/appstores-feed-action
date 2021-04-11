@@ -40,7 +40,7 @@ appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsDat
             }
             // Get icon images as base64
             core.info("Getting base64 icons");
-            appsData = replaceIconsWithBase64Images(appsData);
+            appsData = await replaceIconsWithBase64Images(appsData);
             core.info(appsData);
             core.info("Base64 icons apps data:" + appsData.map(e => JSON.stringify(e)).join());
             // Build SVG
