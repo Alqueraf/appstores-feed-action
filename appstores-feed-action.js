@@ -88,10 +88,11 @@ const replaceIconsWithBase64Images = async (appsData) => {
 const buildAppstoresFeedSvg = (appsData) => {
     // Prepare HTML block
     const rowHeight = 135;
-    const rows = Math.ceil(appsData / 2);
+    const rows = Math.ceil(appsData.length / 2);
     const htmlStartElement = `
 <svg width="800" height="${rowHeight * rows}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <foreignObject width="100%" height="100%">
+        ${css}
         <div xmlns="http://www.w3.org/1999/xhtml" class="grid-container">`;
     const htmlEndElement = `
         </div>
@@ -122,7 +123,7 @@ const buildAppstoresFeedSvg = (appsData) => {
             .replace(appImagePlaceholder, element["icon"])
             .replace(appRatingPlaceholder, element["rating"])
             .replace(appMetricsPlaceholder, element["type"] === "appstore" ? element["rating_count"] + " reviews" : element["installs"] + " installs")
-            .replace(appLinkPlaceholder, element["url"].replace("&", "&amp;"))
+            .replace(appLinkPlaceholder, element["url"].replaceAll("&", "&amp;"))
             .replace(appLinkImagePlaceholder, element["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
         return rowElement;
 
@@ -262,6 +263,5 @@ const getBase64FromUrl = async (url) => {
     const image = await axios.get(url, {responseType: 'arraybuffer'});
     const raw = Buffer.from(image.data).toString('base64');
     const base64 = "data:" + image.headers["content-type"] + ";base64,"+raw;
-    core.info("Got base64 image: "+base64);
     return base64;
 }

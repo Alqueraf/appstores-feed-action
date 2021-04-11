@@ -17,7 +17,7 @@ inputs:
     default: ${{ github.token }}
   svg_path:
     description: 'Path of the svg file you want to update'
-    default: './images/appstore.svg'
+    default: './images/appstores.svg'
     required: false
   commit_message:
     description: "Commit message used while committing to the repo"
