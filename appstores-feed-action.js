@@ -141,7 +141,7 @@ const buildAppSvg = (app) => {
         .replace(appNamePlaceholder, appName)
         .replace(appImagePlaceholder, app["icon"])
         .replace(appRatingPlaceholder, app["rating"])
-        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? "" : app["installs"] + " installs")
+        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"] : app["installs"] + " installs")
         .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
         .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
 
@@ -223,12 +223,12 @@ const commitAndPush = async () => {
 };
 
 // MARK: Styling
-const itemWidth = 300;
-const itemHeight = 69;
+const itemWidth = 330;
+const itemHeight = 90;
 const css = `
 <style>
 .grid-item {
-    width: ${itemWidth}px;
+    width: 315px;
     border-bottom: 1px solid rgba(236, 236, 236, 1);
     display: grid;
     grid-template-columns: auto auto auto;
@@ -237,8 +237,8 @@ const css = `
 }
 
 .grid-item-image {
-    width: 50px;
-    height: 50px;
+    width: 65px;
+    height: 65px;
 }
 
 .grid-item-info {

@@ -36,6 +36,7 @@ class AppstoresService {
                 "rating": appstoreApp["score"],
                 "rating_count": appstoreApp["ratings"],
                 "url": appstoreApp["url"],
+                "primaryGenre" : appstoreApp["primaryGenre"],
                 "type": "appstore"
             });
         });
