@@ -302,19 +302,17 @@ const IMAGE_FOLDER_PATH = core.getInput('image_folder_path');
 const GITHUB_TOKEN = core.getInput('gh_token');
 
 // Reading account from the workflow input
-const appstoreIds = core.getInput('appstore_ids').split(",").map(e => e.trim());
-const playstoreIds = core.getInput('playstore_ids').split(",").map(e => e.trim());
-if (appstoreIds.length === 0 && playstoreIds.length === 0) {
+const appIds = core.getInput('app_ids').split(",").map(e => e.trim());
+if (appIds.length === 0) {
     core.error('Please add some app ids to retrieve');
     process.exit(1);
 }
 
 // Retrieve Apps Data
-appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsData => {
+appstoresService.getLatestAppsData(appIds).then(async appsData => {
     if (appsData.length === 0) {
         core.error('Couldn\'t retrieve any apps for the specified ids');
-        core.info("Appstore ids: " + appstoreIds);
-        core.info("Playstore ids: " + playstoreIds);
+        core.info("App ids: " + appIds);
         process.exit(1);
     } else {
         try {
@@ -451,7 +449,8 @@ const buildReadmeAppsSection = (imagePaths) => {
     const htmlStartElement = `
 <div style="display:grid; 
             grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-            max-width: 660px;">`;
+            max-width: 660px;">
+`;
     const htmlEndElement = `</div>`;
     const htmlImageElement = `<img src="${imageSrcPlaceholder}"/>`;
     // Create <img> array
@@ -107640,10 +107639,11 @@ const appstoreScrapper = __webpack_require__(5389);
 class AppstoresService {
     /**
      *
-     * @param {[string]} playstoreIds Apps to crawl
-     * @param {[string]} appstoreIds Apps to crawl
+     * @param {[string]} appIds Apps to crawl
      */
-    async getLatestAppsData(playstoreIds, appstoreIds) {
+    async getLatestAppsData(appIds) {
+        const playstoreIds = appIds.filter(e => e.includes("."));
+        const appstoreIds = appIds.filter(e => !e.includes("."));
         const playstoreRequests = playstoreIds.map(e => playstoreScrapper.app({appId: e}));
         const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({id: e, ratings: true}));
 

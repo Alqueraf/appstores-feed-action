@@ -15,19 +15,17 @@ const IMAGE_FOLDER_PATH = core.getInput('image_folder_path');
 const GITHUB_TOKEN = core.getInput('gh_token');
 
 // Reading account from the workflow input
-const appstoreIds = core.getInput('appstore_ids').split(",").map(e => e.trim());
-const playstoreIds = core.getInput('playstore_ids').split(",").map(e => e.trim());
-if (appstoreIds.length === 0 && playstoreIds.length === 0) {
+const appIds = core.getInput('app_ids').split(",").map(e => e.trim());
+if (appIds.length === 0) {
     core.error('Please add some app ids to retrieve');
     process.exit(1);
 }
 
 // Retrieve Apps Data
-appstoresService.getLatestAppsData(playstoreIds, appstoreIds).then(async appsData => {
+appstoresService.getLatestAppsData(appIds).then(async appsData => {
     if (appsData.length === 0) {
         core.error('Couldn\'t retrieve any apps for the specified ids');
-        core.info("Appstore ids: " + appstoreIds);
-        core.info("Playstore ids: " + playstoreIds);
+        core.info("App ids: " + appIds);
         process.exit(1);
     } else {
         try {
@@ -154,21 +152,26 @@ const buildAppSvg = (app) => {
 
 /**
  * Builds the readme section for the svg images
- * @param imagePaths {array}: list of image paths
+ * @param imagesPathAndUrl {array}: list of {"path" : imagePath, "url": appUrl}
  * @return {string}: html content with images
  */
-const buildReadmeAppsSection = (imagePaths) => {
+const buildReadmeAppsSection = (imagesPathAndUrl) => {
     // Placeholders
     const imageSrcPlaceholder = "{{imageSrc}}";
+    const urlPlaceholder = "{{url}}";
     // Prepare HTML block
     const htmlStartElement = `
 <div style="display:grid; 
             grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-            max-width: 660px;">`;
+            max-width: 660px;">
+`;
     const htmlEndElement = `</div>`;
-    const htmlImageElement = `<img src="${imageSrcPlaceholder}"/>`;
+    const htmlImageElement = `<a href="${urlPlaceholder}"><img src="${imageSrcPlaceholder}"/></a>`;
     // Create <img> array
-    const htmlImages = imagePaths.map(e => htmlImageElement.replace(imageSrcPlaceholder, e) + "\n");
+    const htmlImages = imagesPathAndUrl.map(e => htmlImageElement
+        .replace(imageSrcPlaceholder, e["path"])
+        .replace(urlPlaceholder, e["url"])
+         + "\n");
     return (htmlStartElement + htmlImages.join('') + htmlEndElement).trim();
 }
 

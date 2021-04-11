@@ -3,12 +3,8 @@ author: 'Alex Queudot'
 description: 'Show the latest data from your playstore and appstore apps on your github profile or project readme'
 
 inputs:
-  appstore_ids:
-    description: "Comma-separated list of appstore app ids"
-    default: ""
-    required: true
-  playstore_ids:
-    description: "Comma-separated list of playstore app package ids"
+  app_ids:
+    description: "Comma-separated list of appstore app ids and playstore app package ids"
     default: ""
     required: true
   gh_token:

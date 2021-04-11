@@ -4,10 +4,11 @@ const appstoreScrapper = require('app-store-scraper');
 class AppstoresService {
     /**
      *
-     * @param {[string]} playstoreIds Apps to crawl
-     * @param {[string]} appstoreIds Apps to crawl
+     * @param {[string]} appIds Apps to crawl
      */
-    async getLatestAppsData(playstoreIds, appstoreIds) {
+    async getLatestAppsData(appIds) {
+        const playstoreIds = appIds.filter(e => e.includes("."));
+        const appstoreIds = appIds.filter(e => !e.includes("."));
         const playstoreRequests = playstoreIds.map(e => playstoreScrapper.app({appId: e}));
         const appstoreRequests = appstoreIds.map(e => appstoreScrapper.app({id: e, ratings: true}));
 
