@@ -63,6 +63,13 @@ appstoresService.getLatestAppsData(appIds).then(async appsData => {
             // Get current README
             core.info("Reading README file");
             const readmeData = fs.readFileSync(README_FILE_PATH, 'utf8');
+            // Create path + url image list
+            const imagesPathAndUrl = imagePaths.map((e, index) => {
+                return {
+                    "path": e,
+                    "url": appsData[index]["url"]
+                }
+            });
             // Prepare new README
             core.info("Building update README");
             const appsSection = buildReadmeAppsSection(imagePaths);
@@ -109,6 +116,8 @@ const buildAppSvg = (app) => {
     if (appName.length > 17) {
         appName = appName.substring(0, 15) + "...";
     }
+    // Set fixed rating count
+    const rating = (Math.round(app["rating"] * 100) / 100).toFixed(1);
     // Placeholders
     const appImagePlaceholder = "{{image}}";
     const appNamePlaceholder = "{{name}}";
@@ -142,8 +151,8 @@ const buildAppSvg = (app) => {
     let svgElement = htmlRowElement
         .replace(appNamePlaceholder, appName)
         .replace(appImagePlaceholder, app["icon"])
-        .replace(appRatingPlaceholder, app["rating"])
-        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"] : app["installs"] + " installs")
+        .replace(appRatingPlaceholder, rating !== "0.0" ? rating : "?")
+        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"].replace(/&/g, "&amp;") : app["installs"] + " installs")
         .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
         .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
 
