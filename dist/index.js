@@ -430,7 +430,7 @@ const buildAppSvg = (app) => {
         .replace(appNamePlaceholder, appName)
         .replace(appImagePlaceholder, app["icon"])
         .replace(appRatingPlaceholder, rating !== "0.0" ? rating : "?")
-        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"].replace(/&/g, "&amp;") : app["installs"] + " installs")
+        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? (app["primaryGenre"]?.replace(/&/g, "&amp;") ?? "") : app["installs"] + " installs")
         .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
         .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
 
@@ -6627,6 +6627,7 @@ const methods = {
   list: __webpack_require__(50459),
   search: __webpack_require__(27125),
   developer: __webpack_require__(73205),
+  privacy: __webpack_require__(58402),
   suggest: __webpack_require__(15241),
   similar: __webpack_require__(50214),
   reviews: __webpack_require__(70414),
@@ -6665,7 +6666,7 @@ function app (opts) {
     }
     const idField = opts.id ? 'id' : 'bundleId';
     const idValue = opts.id || opts.appId;
-    resolve(common.lookup([idValue], idField, opts.country, opts.requestOptions));
+    resolve(common.lookup([idValue], idField, opts.country, opts.lang, opts.requestOptions));
   })
     .then((results) => {
       if (results.length === 0) {
@@ -6757,11 +6758,12 @@ const doRequest = (url, headers, requestOptions) => new Promise(function (resolv
 
 const LOOKUP_URL = 'https://itunes.apple.com/lookup';
 
-function lookup (ids, idField, country, requestOptions) {
+function lookup (ids, idField, country, lang, requestOptions) {
   idField = idField || 'id';
   country = country || 'us';
+  const langParam = lang ? `&lang=${lang}` : '';
   const joinedIds = ids.join(',');
-  const url = `${LOOKUP_URL}?${idField}=${joinedIds}&country=${country}&entity=software`;
+  const url = `${LOOKUP_URL}?${idField}=${joinedIds}&country=${country}&entity=software${langParam}`;
   return doRequest(url, {}, requestOptions)
     .then(JSON.parse)
     .then((res) => res.results.filter(function (app) {
@@ -7023,7 +7025,7 @@ function developer (opts) {
     if (!opts.devId) {
       throw Error('devId is required');
     }
-    resolve(common.lookup([opts.devId], 'id', opts.country, opts.requestOptions));
+    resolve(common.lookup([opts.devId], 'id', opts.country, opts.lang, opts.requestOptions));
   })
     .then((results) => {
     // first result is artist metadata.
@@ -7098,7 +7100,7 @@ function processResults (opts) {
 
     if (opts.fullDetail) {
       const ids = apps.map((app) => app.id.attributes['im:id']);
-      return common.lookup(ids, 'id', opts.country, opts.requestOptions);
+      return common.lookup(ids, 'id', opts.country, opts.lang, opts.requestOptions);
     }
 
     return apps.map(cleanApp);
@@ -7144,6 +7146,49 @@ module.exports = list;
 
 /***/ }),
 
+/***/ 58402:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const common = __webpack_require__(45697);
+
+function privacy (opts) {
+  return new Promise((resolve) => {
+    if (opts.id) {
+      resolve();
+    } else {
+      throw Error('Either id or appId is required');
+    }
+  })
+    .then(() => {
+      const tokenUrl = `https://apps.apple.com/us/app/id${opts.id}`;
+      return common.request(tokenUrl, {}, opts.requestOptions);
+    })
+    .then((html) => {
+      const regExp = /token%22%3A%22([^%]+)%22%7D/g;
+      const match = regExp.exec(html);
+      const token = match[1];
+
+      const url = `https://amp-api.apps.apple.com/v1/catalog/US/apps/${opts.id}?platform=web&fields=privacyDetails&l=en-us`;
+      return common.request(url, {
+        'Origin': 'https://apps.apple.com',
+        'Authorization': `Bearer ${token}`
+      }, opts.requestOptions);
+    })
+    .then((json) => {
+      if (json.length === 0) { throw Error('App not found (404)'); }
+
+      return JSON.parse(json).data[0].attributes.privacyDetails;
+    });
+}
+
+module.exports = privacy;
+
+
+/***/ }),
+
 /***/ 98100:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -7166,7 +7211,7 @@ function ratings (opts) {
 
     resolve(common.request(url, {
       'X-Apple-Store-Front': `${storeFront},12`
-    }));
+    }, opts.requestOptions));
   })
     .then((html) => {
       if (html.length === 0) {
@@ -7322,7 +7367,7 @@ function search (opts) {
       .then(R.pluck('id'))
       .then((ids) => {
         if (!opts.idsOnly) {
-          return common.lookup(ids, 'id', opts.country, opts.requestOptions);
+          return common.lookup(ids, 'id', opts.country, opts.lang, opts.requestOptions);
         }
         return ids;
       })
@@ -7372,7 +7417,7 @@ function similar (opts) {
       const match = regExp.exec(text);
       const ids = JSON.parse(match[1]);
 
-      return common.lookup(ids, 'id', opts.country, opts.requestOptions);
+      return common.lookup(ids, 'id', opts.country, opts.lang, opts.requestOptions);
     });
 }
 
@@ -26403,6 +26448,7 @@ module.exports.category = {
   TOOLS: 'TOOLS',
   TRAVEL_AND_LOCAL: 'TRAVEL_AND_LOCAL',
   VIDEO_PLAYERS: 'VIDEO_PLAYERS',
+  WATCH_FACE: 'WATCH_FACE',
   WEATHER: 'WEATHER',
   GAME: 'GAME',
   GAME_ACTION: 'GAME_ACTION',
@@ -26422,13 +26468,7 @@ module.exports.category = {
   GAME_STRATEGY: 'GAME_STRATEGY',
   GAME_TRIVIA: 'GAME_TRIVIA',
   GAME_WORD: 'GAME_WORD',
-  FAMILY: 'FAMILY',
-  FAMILY_ACTION: 'FAMILY_ACTION',
-  FAMILY_BRAINGAMES: 'FAMILY_BRAINGAMES',
-  FAMILY_CREATE: 'FAMILY_CREATE',
-  FAMILY_EDUCATION: 'FAMILY_EDUCATION',
-  FAMILY_MUSICVIDEO: 'FAMILY_MUSICVIDEO',
-  FAMILY_PRETEND: 'FAMILY_PRETEND'
+  FAMILY: 'FAMILY'
 };
 
 module.exports.collection = {
@@ -26690,6 +26730,9 @@ const MAPPINGS = {
       }
     },
     new: {
+      1: {
+        [c.collection.NEW_FREE]: 0
+      },
       2: {
         [c.collection.NEW_FREE]: 0,
         [c.collection.NEW_PAID]: 1
@@ -26724,98 +26767,119 @@ const cheerio = __webpack_require__(95591);
 
 const MAPPINGS = {
   // FIXME add appId
-  title: ['ds:5', 0, 0, 0],
+  title: ['ds:6', 0, 0, 0],
   description: {
-    path: ['ds:5', 0, 10, 0, 1],
+    path: ['ds:6', 0, 10, 0, 1],
     fun: descriptionText
   },
-  descriptionHTML: ['ds:5', 0, 10, 0, 1],
-  summary: ['ds:5', 0, 10, 1, 1],
-  installs: ['ds:5', 0, 12, 9, 0],
-  minInstalls: ['ds:5', 0, 12, 9, 1],
-  maxInstalls: ['ds:5', 0, 12, 9, 2],
-  score: ['ds:6', 0, 6, 0, 1],
-  scoreText: ['ds:6', 0, 6, 0, 0],
-  ratings: ['ds:6', 0, 6, 2, 1],
-  reviews: ['ds:6', 0, 6, 3, 1],
+  descriptionHTML: ['ds:6', 0, 10, 0, 1],
+  summary: ['ds:6', 0, 10, 1, 1],
+  installs: ['ds:6', 0, 12, 9, 0],
+  minInstalls: ['ds:6', 0, 12, 9, 1],
+  maxInstalls: ['ds:6', 0, 12, 9, 2],
+  score: ['ds:7', 0, 6, 0, 1],
+  scoreText: ['ds:7', 0, 6, 0, 0],
+  ratings: ['ds:7', 0, 6, 2, 1],
+  reviews: ['ds:7', 0, 6, 3, 1],
   histogram: {
-    path: ['ds:6', 0, 6, 1],
+    path: ['ds:7', 0, 6, 1],
     fun: buildHistogram
   },
 
   price: {
-    path: ['ds:3', 0, 2, 0, 0, 0, 1, 0, 0],
+    path: ['ds:4', 0, 2, 0, 0, 0, 1, 0, 0],
     fun: (val) => val / 1000000 || 0
   },
   free: {
-    path: ['ds:3', 0, 2, 0, 0, 0, 1, 0, 0],
+    path: ['ds:4', 0, 2, 0, 0, 0, 1, 0, 0],
     // considered free only if price is exactly zero
     fun: (val) => val === 0
   },
-  currency: ['ds:3', 0, 2, 0, 0, 0, 1, 0, 1],
+  currency: ['ds:4', 0, 2, 0, 0, 0, 1, 0, 1],
   priceText: {
-    path: ['ds:3', 0, 2, 0, 0, 0, 1, 0, 2],
+    path: ['ds:4', 0, 2, 0, 0, 0, 1, 0, 2],
     fun: priceText
   },
-  offersIAP: {
-    path: ['ds:5', 0, 12, 12, 0],
+  available: {
+    path: ['ds:6', 0, 12, 11, 0],
     fun: Boolean
   },
-  IAPRange: ['ds:5', 0, 12, 12, 0],
-  size: ['ds:8', 0],
+  offersIAP: {
+    path: ['ds:6', 0, 12, 12, 0],
+    fun: Boolean
+  },
+  IAPRange: ['ds:6', 0, 12, 12, 0],
+  size: ['ds:3', 0],
   androidVersion: {
-    path: ['ds:8', 2],
+    path: ['ds:3', 2],
     fun: normalizeAndroidVersion
   },
-  androidVersionText: ['ds:8', 2],
-  developer: ['ds:5', 0, 12, 5, 1],
+  androidVersionText: ['ds:3', 2],
+  developer: ['ds:6', 0, 12, 5, 1],
   developerId: {
-    path: ['ds:5', 0, 12, 5, 5, 4, 2],
+    path: ['ds:6', 0, 12, 5, 5, 4, 2],
     fun: (devUrl) => devUrl.split('id=')[1]
   },
-  developerEmail: ['ds:5', 0, 12, 5, 2, 0],
-  developerWebsite: ['ds:5', 0, 12, 5, 3, 5, 2],
-  developerAddress: ['ds:5', 0, 12, 5, 4, 0],
-  privacyPolicy: ['ds:5', 0, 12, 7, 2],
-  developerInternalID: ['ds:5', 0, 12, 5, 0, 0],
-  genre: ['ds:5', 0, 12, 13, 0, 0],
-  genreId: ['ds:5', 0, 12, 13, 0, 2],
-  familyGenre: ['ds:5', 0, 12, 13, 1, 0],
-  familyGenreId: ['ds:5', 0, 12, 13, 1, 2],
-  icon: ['ds:5', 0, 12, 1, 3, 2],
-  headerImage: ['ds:5', 0, 12, 2, 3, 2],
+  developerEmail: ['ds:6', 0, 12, 5, 2, 0],
+  developerWebsite: ['ds:6', 0, 12, 5, 3, 5, 2],
+  developerAddress: ['ds:6', 0, 12, 5, 4, 0],
+  privacyPolicy: ['ds:6', 0, 12, 7, 2],
+  developerInternalID: ['ds:6', 0, 12, 5, 0, 0],
+  genre: ['ds:6', 0, 12, 13, 0, 0],
+  genreId: ['ds:6', 0, 12, 13, 0, 2],
+  familyGenre: ['ds:6', 0, 12, 13, 1, 0],
+  familyGenreId: ['ds:6', 0, 12, 13, 1, 2],
+  icon: ['ds:6', 0, 12, 1, 3, 2],
+  headerImage: ['ds:6', 0, 12, 2, 3, 2],
   screenshots: {
-    path: ['ds:5', 0, 12, 0],
+    path: ['ds:6', 0, 12, 0],
     fun: (screenshots) => {
       if (screenshots === null) return [];
       return screenshots.map(R.path([3, 2]));
     }
   },
-  video: ['ds:5', 0, 12, 3, 0, 3, 2],
-  videoImage: ['ds:5', 0, 12, 3, 1, 3, 2],
-  contentRating: ['ds:5', 0, 12, 4, 0],
-  contentRatingDescription: ['ds:5', 0, 12, 4, 2, 1],
+  video: ['ds:6', 0, 12, 3, 0, 3, 2],
+  videoImage: ['ds:6', 0, 12, 3, 1, 3, 2],
+  contentRating: ['ds:6', 0, 12, 4, 0],
+  contentRatingDescription: ['ds:6', 0, 12, 4, 2, 1],
   adSupported: {
-    path: ['ds:5', 0, 12, 14, 0],
+    path: ['ds:6', 0, 12, 14, 0],
     fun: Boolean
   },
-  released: ['ds:5', 0, 12, 36],
+  released: ['ds:6', 0, 12, 36],
   updated: {
-    path: ['ds:5', 0, 12, 8, 0],
+    path: ['ds:6', 0, 12, 8, 0],
     fun: (ts) => ts * 1000
   },
-  version: ['ds:8', 1],
-  recentChanges: ['ds:5', 0, 12, 6, 1],
+  version: ['ds:3', 1],
+  recentChanges: ['ds:6', 0, 12, 6, 1],
   comments: {
     useServiceRequestId: 'UsvDTd',
     path: [0],
     fun: extractComments
   },
   editorsChoice: {
-    path: ['ds:5', 0, 12, 15, 0],
+    path: ['ds:6', 0, 12, 15, 0],
     fun: Boolean
+  },
+  features: {
+    path: ['ds:6', 0, 12, 16],
+    fun: extractFeatures
   }
 };
+
+function extractFeatures (featuresArray) {
+  if (featuresArray === null) {
+    return [];
+  }
+
+  const features = featuresArray[2] || [];
+
+  return features.map(feature => ({
+    title: feature[0],
+    description: R.path([1, 0, 0, 1], feature)
+  }));
+}
 
 function descriptionText (description) {
   // preserve the line breaks when converting to text
@@ -26832,6 +26896,7 @@ function normalizeAndroidVersion (androidVersionText) {
   if (parseFloat(number)) {
     return number;
   }
+
   return 'VARY';
 }
 
@@ -26839,6 +26904,7 @@ function buildHistogram (container) {
   if (!container) {
     return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   }
+
   return {
     1: container[1][1],
     2: container[2][1],
@@ -26933,6 +26999,69 @@ module.exports = {
   INITIAL_MAPPINGS,
   REQUEST_MAPPINGS
 };
+
+
+/***/ }),
+
+/***/ 54778:
+/***/ ((module) => {
+
+"use strict";
+
+
+const INITIAL_MAPPINGS = {
+  cluster: ['ds:8', 1, 1, 0, 0, 3, 4, 2],
+  apps: ['ds:3', 0, 1, 0, 0, 0],
+  token: ['ds:3', 0, 1, 0, 0, 7, 1]
+};
+
+module.exports = {
+  INITIAL_MAPPINGS
+};
+
+
+/***/ }),
+
+/***/ 43753:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const R = __webpack_require__(3501);
+const debug = __webpack_require__(75544)('google-play-scraper:parseSimilarApps');
+const request = __webpack_require__(42180);
+const scriptData = __webpack_require__(64457);
+const { BASE_URL } = __webpack_require__(40964);
+const { processAndRecur } = __webpack_require__(38301);
+const { INITIAL_MAPPINGS } = __webpack_require__(54778);
+
+function getParsedCluster (similarObject) {
+  const clusterUrl = R.path(INITIAL_MAPPINGS.cluster, similarObject);
+  return clusterUrl;
+}
+
+function parseSimilarApps (similarObject, opts) {
+  const clusterUrl = getParsedCluster(similarObject);
+
+  if (clusterUrl === undefined) {
+    throw Error('Similar link not found');
+  }
+
+  const fullClusterUrl = `${BASE_URL}${clusterUrl}&gl=${opts.country}&hl=${opts.lang}`;
+  debug('Cluster Request URL: %s', fullClusterUrl);
+
+  const options = Object.assign({
+    url: fullClusterUrl,
+    followAllRedirects: true
+  }, opts.requestOptions);
+
+  return request(options, opts.throttle)
+    .then(scriptData.parse)
+    .then((htmlParsed) => processAndRecur(htmlParsed, opts, [], INITIAL_MAPPINGS));
+}
+
+module.exports = parseSimilarApps;
 
 
 /***/ }),
@@ -27230,7 +27359,7 @@ async function processReviewsAndGetNextPage (html, opts, savedReviews) {
     : html;
 
   if (parsedHtml.length === 0) {
-    return formatReviewsResponse(savedReviews);
+    return formatReviewsResponse({ reviews: savedReviews, token: null, num });
   }
 
   // PROCESS REVIEWS EXTRACTION
@@ -27238,7 +27367,7 @@ async function processReviewsAndGetNextPage (html, opts, savedReviews) {
   const token = R.path(REQUEST_MAPPINGS.token, parsedHtml);
   const reviewsAccumulator = [...savedReviews, ...reviews];
 
-  return (!paginate && token && reviewsAccumulator.length < opts.num)
+  return (!paginate && token && reviewsAccumulator.length < num)
     ? makeReviewsRequest(processAndRecurOptions, reviewsAccumulator, token)
     : formatReviewsResponse({ reviews: reviewsAccumulator, token, num });
 }
@@ -27261,7 +27390,8 @@ function makeReviewsRequest (opts, savedReviews, nextToken) {
     lang,
     country,
     requestOptions,
-    throttle
+    throttle,
+    num
   } = opts;
   const body = getBodyForRequests({
     appId,
@@ -27290,7 +27420,7 @@ function makeReviewsRequest (opts, savedReviews, nextToken) {
       const data = JSON.parse(input[0][2]);
 
       return (data === null)
-        ? formatReviewsResponse(savedReviews)
+        ? formatReviewsResponse({ reviews: savedReviews, token: null, num })
         : processReviewsAndGetNextPage(data, opts, savedReviews);
     });
 }
@@ -27507,57 +27637,52 @@ module.exports = search;
 "use strict";
 
 
+const debug = __webpack_require__(75544)('google-play-scraper:similar');
 const request = __webpack_require__(42180);
 const queryString = __webpack_require__(71191);
 const scriptData = __webpack_require__(64457);
-const appList = __webpack_require__(27829);
-
-const PLAYSTORE_URL = 'https://play.google.com/store/apps/details';
+const { BASE_URL, DEFAULT_PARAMETERS } = __webpack_require__(40964);
+const parseSimilarApps = __webpack_require__(43753);
 
 function similar (opts) {
   return new Promise(function (resolve, reject) {
-    if (!opts || !opts.appId) {
-      throw Error('appId missing');
-    }
+    validateSimilarParameters(opts);
 
-    opts.appId = encodeURIComponent(opts.appId);
-    opts.lang = opts.lang || 'en';
-    opts.country = opts.country || 'us';
+    const mergedOpts = Object.assign({},
+      {
+        appId: encodeURIComponent(opts.appId),
+        lang: opts.lang || DEFAULT_PARAMETERS.similar.lang,
+        country: opts.country || DEFAULT_PARAMETERS.similar.country,
+        fullDetail: opts.fullDetail || DEFAULT_PARAMETERS.similar.fullDetail
+      });
 
     const qs = queryString.stringify({
-      id: opts.appId,
-      hl: opts.lang,
-      gl: opts.country
+      id: mergedOpts.appId,
+      hl: mergedOpts.lang,
+      gl: mergedOpts.country
     });
-    const reqUrl = `${PLAYSTORE_URL}?${qs}`;
 
+    const similarUrl = `${BASE_URL}/store/apps/details?${qs}`;
     const options = Object.assign({
-      url: reqUrl,
+      url: similarUrl,
       followAllRedirects: true
     }, opts.requestOptions);
 
+    debug('Similar Request URL: %s', similarUrl);
+
     request(options, opts.throttle)
       .then(scriptData.parse)
-      .then(scriptData.extractor(PATH_MAPPING))
-      .then(data => {
-        if (data.path === undefined) {
-          throw Error('not found similar link');
-        }
-        return request(Object.assign({
-          url: `https://play.google.com${data.path}&gl=${opts.country}&hl=${opts.lang}`,
-          followAllRedirects: true
-        }, opts.requestOptions));
-      })
-      .then(scriptData.parse)
-      .then((parsed) => appList.extract(['ds:3', 0, 1, 0, 0, 0], parsed))
+      .then(parsedObject => parseSimilarApps(parsedObject, mergedOpts))
       .then(resolve)
       .catch(reject);
   });
 }
 
-const PATH_MAPPING = {
-  path: ['ds:7', 1, 1, 0, 0, 3, 4, 2]
-};
+function validateSimilarParameters (opts) {
+  if (!opts || !opts.appId) {
+    throw Error('appId missing');
+  }
+}
 
 module.exports = similar;
 
@@ -27675,9 +27800,18 @@ module.exports = { MAPPINGS, extract };
 const BASE_URL = 'https://play.google.com';
 const CLUSTER_BASE_URL = `${BASE_URL}/store/apps`;
 
+const DEFAULT_PARAMETERS = {
+  similar: {
+    lang: 'en',
+    country: 'us',
+    fullDetail: false
+  }
+};
+
 module.exports = {
   BASE_URL,
-  CLUSTER_BASE_URL
+  CLUSTER_BASE_URL,
+  DEFAULT_PARAMETERS
 };
 
 
