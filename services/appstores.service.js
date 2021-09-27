@@ -41,7 +41,7 @@ class AppstoresService {
                     "rating": app["score"],
                     "rating_count": app["ratings"],
                     "url": app["url"],
-                    "primaryGenre": app["primaryGenre"],
+                    "primaryGenre": app["primaryGenre"] ?? "Business",
                     "type": "appstore"
                 });
             }

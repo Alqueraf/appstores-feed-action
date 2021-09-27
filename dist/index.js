@@ -430,7 +430,7 @@ const buildAppSvg = (app) => {
         .replace(appNamePlaceholder, appName)
         .replace(appImagePlaceholder, app["icon"])
         .replace(appRatingPlaceholder, rating !== "0.0" ? rating : "?")
-        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? (app["primaryGenre"]?.replace(/&/g, "&amp;") ?? "") : app["installs"] + " installs")
+        .replace(appMetricsPlaceholder, app["type"] === "appstore" ? app["primaryGenre"].replace(/&/g, "&amp;") : app["installs"] + " installs")
         .replace(appLinkPlaceholder, app["url"].replace(/&/g, "&amp;"))
         .replace(appLinkImagePlaceholder, app["type"] === "appstore" ? appstoreCtaBase64Image : playstoreCtaBase64Image);
 
@@ -107814,7 +107814,7 @@ class AppstoresService {
                     "rating": app["score"],
                     "rating_count": app["ratings"],
                     "url": app["url"],
-                    "primaryGenre": app["primaryGenre"],
+                    "primaryGenre": app["primaryGenre"] ?? "Business",
                     "type": "appstore"
                 });
             }
