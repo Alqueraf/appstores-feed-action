@@ -107814,7 +107814,7 @@ class AppstoresService {
                     "rating": app["score"],
                     "rating_count": app["ratings"],
                     "url": app["url"],
-                    "primaryGenre": app["primaryGenre"] ?? "Business",
+                    "primaryGenre": app["primaryGenre"] != null ? app["primaryGenre"] : "Business",
                     "type": "appstore"
                 });
             }
