@@ -54,3 +54,7 @@ If you are experiencing any bugs, don’t forget to open a [new issue](https://g
 
 ### Liked it?
 Hope you liked this project, don't forget to give it a star ⭐
+
+### Local Development
+- To test this project on your own environment, clone the repository and execute any script with `node script.js`.
+- Before commiting your changes run `ncc build appstores-feed-action.js --license licenses.txt` to compile your changes.
