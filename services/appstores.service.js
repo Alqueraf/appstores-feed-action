@@ -51,5 +51,6 @@ class AppstoresService {
 }
 
 const appstoresService = new AppstoresService();
+// appstoresService.getLatestAppsData("TODO: Add your comma-separated list of appIds to test here".split(",").map(e => e.trim()));
 
 module.exports = appstoresService;
